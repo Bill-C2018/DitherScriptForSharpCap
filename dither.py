@@ -314,6 +314,7 @@ def phdDither() :
 		sleep(1)
 		if doPhdDither == 1 :
 			setMessage("STATUS: Dither command rcvd \r\n")
+			#found two "larger" dither commands
 			ditherAmount = 5
 			ditherCmd = CmdList["DD"]
 			if ditherCmd < 4 :
