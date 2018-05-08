@@ -314,7 +314,12 @@ def phdDither() :
 		sleep(1)
 		if doPhdDither == 1 :
 			setMessage("STATUS: Dither command rcvd \r\n")
-			ditherAmount = CmdList["DD"] + 2
+			ditherAmount = 5
+			ditherCmd = CmdList["DD"]
+			if ditherCmd < 4 :
+				ditherAmount =  ditherCmd + 2
+			else :
+				ditherAmount = ditherCmd + 8
 			msg = chr(ditherAmount)
 			s2.send(msg.encode())
 			doPhdDither = 0
