@@ -39,6 +39,9 @@ CmdList["GS"] = 1
 #if set to 0 use the phddither.exe application if set to 1, 2, or 3
 #dither with phd directly at that level of dithereing (low medium high) 
 CmdList["DD"] = 2
+#set to one if you are doing live stacking 
+#0 otherwise
+CmdList["LS"] = 1
 #================================================================================================
 #================================================================================================
 #=========== from here downward is optional - if left as is it will use the 
@@ -167,6 +170,47 @@ def sharpCapStopCapture( useSharpCap ) :
 		
 #======================================================================================
 #======================================================================================
+#this is the sharp cap thread if live stacking 
+def threaded_livestack
+	global CaptureThreadRunning
+	global terminate
+	
+	CaptureThreadRunning = 1
+	
+	lastTotalCount = 0
+	totalCount = 0
+	ditherCount = 0
+	terminate = 0
+	
+	while terminate == 0 :
+		sleep(2)
+		
+		if sharpCapIsCapturing( useSharpCap ) :
+			totalCount = sharpCapGetImageCount( useSharpCap )
+			
+		ditherCount = totalCount - lastTotalCount
+		
+		if isDithering == 1 and needsunpausing == 1:
+			sharpCapToggleCameraPaused( useSharpCap, False)
+			needsunpausing = 0;
+			
+		if ditherCount >= CmdList["DE"]	:
+			setMessage("STATUS: dither start \r\n")
+			sharpCapToggleCameraPaused( useSharpCap, True)
+			lastTotalCount = totalCount
+					
+			ditherCount = 0
+			isDithering = 1
+			if CmdList["DD"] == 0 :
+				os.system(CmdList["PA"]) 
+			else :
+				setMessage("STATUS: Sending dither command \r\n")
+				doPhdDither = 1
+						
+			needsunpausing = 1
+					
+	
+	
 #======================================================================================
 #======================================================================================
 # this function is the thread that deals with SharpCap
@@ -393,8 +437,13 @@ def runLoop() :
 				terminate = 0
 				forceTerminate = 0
 				isDithering = 0
+				t2 = 0
+				
 				t1 = threading.Thread(target=threaded_listen, args=[])
-				t2 = threading.Thread(target=threaded_send, args=[])
+				if CmdList["LS"] == 0 :
+					t2 = threading.Thread(target=threaded_send, args=[])
+				else :
+					t2 = threading.Thread(target=threaded_livestack, args=[])
 				t3 = threading.Thread(target=phdDither, args=[])
 				t1.start()
 				t2.start()
