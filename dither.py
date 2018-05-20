@@ -88,7 +88,7 @@ needsunpausing = 0
 
 lock = threading.Lock()
 
-validCommands = ["FC","DE","PA","GS","EX","GA","DD"]
+validCommands = ["FC","DE","PA","GS","EX","GA","DD", "LS"]
 
 
 #======================================================================================
@@ -171,9 +171,17 @@ def sharpCapStopCapture( useSharpCap ) :
 #======================================================================================
 #======================================================================================
 #this is the sharp cap thread if live stacking 
-def threaded_livestack
-	global CaptureThreadRunning
+def threaded_livestack() :
 	global terminate
+	global isGuiding
+	global CmdList
+	global isDithering
+	global forceTerminate
+	global CaptureThreadRunning
+	global doPhdDither
+	global messagecount
+	global useSharpCap
+	global needsunpausing
 	
 	CaptureThreadRunning = 1
 	
@@ -181,22 +189,30 @@ def threaded_livestack
 	totalCount = 0
 	ditherCount = 0
 	terminate = 0
+	waitoneframe = 0
 	
-	while terminate == 0 :
+	lastTotalCount = SharpCap.SelectedCamera.CapturedFrameCount
+	
+	setMessage("STATUS: live capture runninig \r\n")
+	while forceTerminate == 0 :
 		sleep(2)
 		
-		if sharpCapIsCapturing( useSharpCap ) :
-			totalCount = sharpCapGetImageCount( useSharpCap )
-			
+		setMessage("STATUS: live capture loop1 \r\n")
+		totalCount = SharpCap.SelectedCamera.CapturedFrameCount			
+		setMessage("STATUS: live capture loop2 \r\n")	
 		ditherCount = totalCount - lastTotalCount
+		if isDithering == 1 :
+			waitoneframe = totalCount
 		
-		if isDithering == 1 and needsunpausing == 1:
-			sharpCapToggleCameraPaused( useSharpCap, False)
-			needsunpausing = 0;
+		setMessage("STATUS: dither count " + str(ditherCount) + " \r\n")
+		if isDithering == 0 and needsunpausing == 1:
+			if totalCount > waitoneframe :
+				SharpCap.LiveStacking.Parameters.Paused = False
+				needsunpausing = 0;
 			
 		if ditherCount >= CmdList["DE"]	:
 			setMessage("STATUS: dither start \r\n")
-			sharpCapToggleCameraPaused( useSharpCap, True)
+			SharpCap.LiveStacking.Parameters.Paused = True
 			lastTotalCount = totalCount
 					
 			ditherCount = 0
@@ -209,7 +225,8 @@ def threaded_livestack
 						
 			needsunpausing = 1
 					
-	
+	CaptureThreadRunning = 0
+	setMessage("STATUS: end live capture thread \r\n")
 	
 #======================================================================================
 #======================================================================================
@@ -428,7 +445,8 @@ def runLoop() :
 	
 	while 1 :
 		
-		sleep(1)
+		sleep(4)
+		setMessage("DEBUG: run loop \r\n")
 		if startCaptureClicked == 1 :
 		
 			if CaptureThreadRunning == 0 and PHDThreadRunning == 0 :
@@ -454,11 +472,11 @@ def runLoop() :
 			forceTerminate = 1
 			setMessage("STATUS: Run Complete \r\n")
 			stopCaptureClicked = 0
-			t1.join()
-			t2.join()
-			t3.join()
+#			t1.join()
+#			t2.join()
+#			t3.join()
 			
-
+	setMessage("STATUS: run loop exit \r\n")
 		
 def statusLoop() :
 	global messagecount
@@ -503,7 +521,15 @@ def statusLoop() :
 def startCapture() :
 	global startCaptureClicked
 	global CmdList
+	global forceTerminate
+	global terminate
+	global stopCaptureClicked
+
 	
+	forceTerminate = 0
+	terminate = 0
+	stopCaptureClicked = 0
+	setMessage("EVENT: Start clicked \r\n")
 	filepath = CmdList["CF"]
 	if os.path.isfile(filepath):
 		with open(filepath) as fp :
