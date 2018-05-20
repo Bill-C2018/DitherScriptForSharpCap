@@ -39,6 +39,9 @@ CmdList["GS"] = 1
 #if set to 0 use the phddither.exe application if set to 1, 2, or 3
 #dither with phd directly at that level of dithereing (low medium high) 
 CmdList["DD"] = 2
+#set to one if you are doing live stacking 
+#0 otherwise
+CmdList["LS"] = 1
 #================================================================================================
 #================================================================================================
 #=========== from here downward is optional - if left as is it will use the 
@@ -85,7 +88,7 @@ needsunpausing = 0
 
 lock = threading.Lock()
 
-validCommands = ["FC","DE","PA","GS","EX","GA","DD"]
+validCommands = ["FC","DE","PA","GS","EX","GA","DD", "LS"]
 
 
 #======================================================================================
@@ -167,6 +170,64 @@ def sharpCapStopCapture( useSharpCap ) :
 		
 #======================================================================================
 #======================================================================================
+#this is the sharp cap thread if live stacking 
+def threaded_livestack() :
+	global terminate
+	global isGuiding
+	global CmdList
+	global isDithering
+	global forceTerminate
+	global CaptureThreadRunning
+	global doPhdDither
+	global messagecount
+	global useSharpCap
+	global needsunpausing
+	
+	CaptureThreadRunning = 1
+	
+	lastTotalCount = 0
+	totalCount = 0
+	ditherCount = 0
+	terminate = 0
+	waitoneframe = 0
+	
+	lastTotalCount = SharpCap.SelectedCamera.CapturedFrameCount
+	
+	setMessage("STATUS: live capture runninig \r\n")
+	while forceTerminate == 0 :
+		sleep(2)
+		
+		setMessage("STATUS: live capture loop1 \r\n")
+		totalCount = SharpCap.SelectedCamera.CapturedFrameCount			
+		setMessage("STATUS: live capture loop2 \r\n")	
+		ditherCount = totalCount - lastTotalCount
+		if isDithering == 1 :
+			waitoneframe = totalCount
+		
+		setMessage("STATUS: dither count " + str(ditherCount) + " \r\n")
+		if isDithering == 0 and needsunpausing == 1:
+			if totalCount > waitoneframe :
+				SharpCap.LiveStacking.Parameters.Paused = False
+				needsunpausing = 0;
+			
+		if ditherCount >= CmdList["DE"]	:
+			setMessage("STATUS: dither start \r\n")
+			SharpCap.LiveStacking.Parameters.Paused = True
+			lastTotalCount = totalCount
+					
+			ditherCount = 0
+			isDithering = 1
+			if CmdList["DD"] == 0 :
+				os.system(CmdList["PA"]) 
+			else :
+				setMessage("STATUS: Sending dither command \r\n")
+				doPhdDither = 1
+						
+			needsunpausing = 1
+					
+	CaptureThreadRunning = 0
+	setMessage("STATUS: end live capture thread \r\n")
+	
 #======================================================================================
 #======================================================================================
 # this function is the thread that deals with SharpCap
@@ -384,7 +445,8 @@ def runLoop() :
 	
 	while 1 :
 		
-		sleep(1)
+		sleep(4)
+		setMessage("DEBUG: run loop \r\n")
 		if startCaptureClicked == 1 :
 		
 			if CaptureThreadRunning == 0 and PHDThreadRunning == 0 :
@@ -393,8 +455,13 @@ def runLoop() :
 				terminate = 0
 				forceTerminate = 0
 				isDithering = 0
+				t2 = 0
+				
 				t1 = threading.Thread(target=threaded_listen, args=[])
-				t2 = threading.Thread(target=threaded_send, args=[])
+				if CmdList["LS"] == 0 :
+					t2 = threading.Thread(target=threaded_send, args=[])
+				else :
+					t2 = threading.Thread(target=threaded_livestack, args=[])
 				t3 = threading.Thread(target=phdDither, args=[])
 				t1.start()
 				t2.start()
@@ -405,11 +472,11 @@ def runLoop() :
 			forceTerminate = 1
 			setMessage("STATUS: Run Complete \r\n")
 			stopCaptureClicked = 0
-			t1.join()
-			t2.join()
-			t3.join()
+#			t1.join()
+#			t2.join()
+#			t3.join()
 			
-
+	setMessage("STATUS: run loop exit \r\n")
 		
 def statusLoop() :
 	global messagecount
@@ -454,7 +521,15 @@ def statusLoop() :
 def startCapture() :
 	global startCaptureClicked
 	global CmdList
+	global forceTerminate
+	global terminate
+	global stopCaptureClicked
+
 	
+	forceTerminate = 0
+	terminate = 0
+	stopCaptureClicked = 0
+	setMessage("EVENT: Start clicked \r\n")
 	filepath = CmdList["CF"]
 	if os.path.isfile(filepath):
 		with open(filepath) as fp :
