@@ -197,18 +197,23 @@ def threaded_livestack() :
 	while forceTerminate == 0 :
 		sleep(2)
 		
-		setMessage("STATUS: live capture loop1 \r\n")
+		#setMessage("STATUS: live capture loop1 \r\n")
 		totalCount = SharpCap.SelectedCamera.CapturedFrameCount			
-		setMessage("STATUS: live capture loop2 \r\n")	
-		ditherCount = totalCount - lastTotalCount
-		if isDithering == 1 :
+		#setMessage("STATUS: live capture loop2 \r\n")	
+		
+		if isDithering == 1 and needsunpausing == 1:
 			waitoneframe = totalCount
+			lastTotalCount = totalCount
+		else:
+			if needsunpausing == 0 :
+				ditherCount = totalCount - lastTotalCount
 		
 		setMessage("STATUS: dither count " + str(ditherCount) + " \r\n")
 		if isDithering == 0 and needsunpausing == 1:
 			if totalCount > waitoneframe :
 				SharpCap.LiveStacking.Parameters.Paused = False
 				needsunpausing = 0;
+				lastTotalCount = totalCount
 			
 		if ditherCount >= CmdList["DE"]	:
 			setMessage("STATUS: dither start \r\n")
@@ -446,7 +451,7 @@ def runLoop() :
 	while 1 :
 		
 		sleep(4)
-		setMessage("DEBUG: run loop \r\n")
+		#setMessage("DEBUG: run loop \r\n")
 		if startCaptureClicked == 1 :
 		
 			if CaptureThreadRunning == 0 and PHDThreadRunning == 0 :
