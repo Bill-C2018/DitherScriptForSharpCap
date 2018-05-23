@@ -10,7 +10,7 @@
 #<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 #</body>
 #
-#
+#A big thank you to DonBoy from CloudyNights forums for all the testing and suggestions he has and continues to make!
 #
 
 import datetime, socket, sys, json, threading
@@ -42,6 +42,9 @@ CmdList["DD"] = 2
 #set to one if you are doing live stacking 
 #0 otherwise
 CmdList["LS"] = 1
+#wait one frame after we recieve settledone if set to one else
+#start stacking as soon as we get the settle done
+CmdList["SD"] = 1
 #================================================================================================
 #================================================================================================
 #=========== from here downward is optional - if left as is it will use the 
@@ -88,7 +91,7 @@ needsunpausing = 0
 
 lock = threading.Lock()
 
-validCommands = ["FC","DE","PA","GS","EX","GA","DD", "LS"]
+validCommands = ["FC","DE","PA","GS","EX","GA","DD", "LS", "SD"]
 
 
 #======================================================================================
@@ -197,6 +200,7 @@ def threaded_livestack() :
 	while forceTerminate == 0 :
 		sleep(2)
 		
+		
 		#setMessage("STATUS: live capture loop1 \r\n")
 		totalCount = SharpCap.SelectedCamera.CapturedFrameCount			
 		#setMessage("STATUS: live capture loop2 \r\n")	
@@ -210,10 +214,16 @@ def threaded_livestack() :
 		
 		setMessage("STATUS: dither count " + str(ditherCount) + " \r\n")
 		if isDithering == 0 and needsunpausing == 1:
-			if totalCount > waitoneframe :
+			if CmdList["SD"] == 1 :
+				if totalCount > waitoneframe :
+					SharpCap.LiveStacking.Parameters.Paused = False
+					needsunpausing = 0;
+					lastTotalCount = totalCount
+			else :
 				SharpCap.LiveStacking.Parameters.Paused = False
 				needsunpausing = 0;
 				lastTotalCount = totalCount
+			
 			
 		if ditherCount >= CmdList["DE"]	:
 			setMessage("STATUS: dither start \r\n")
