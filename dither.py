@@ -211,6 +211,7 @@ def threaded_livestack():
     #setMessage("STATUS: live capture runninig \r\n")
     setMessage(buildMessage("STATUS", "live capture running"))
     while GlobalVars.forceTerminate == 0:
+        print "in live capture loop"
         setMessage(buildMessage("DEBUG", "in live capture loop"))
         sleep(2)
 
@@ -224,10 +225,12 @@ def threaded_livestack():
             if GlobalVars.needs_unpausing == 0:
                 dither_count = total_count - last_total_count
 
-        #setMessage("STATUS: dither count " + str(ditherCount) + " \r\n")
-        setMessage(buildMessage("DEBUG", "dither count " + str(ditherCount)))
+        
+        setMessage(buildMessage("DEBUG", "dither count " + str(dither_count)))
+        
 		
         if GlobalVars.isDithering == 0 and GlobalVars.needs_unpausing == 1:
+            
             if GlobalVars.cmd_list["SD"] == 1:
                 if total_count > waitoneframe:
                     SharpCap.LiveStacking.Parameters.Paused = False
@@ -238,8 +241,9 @@ def threaded_livestack():
                 GlobalVars.needs_unpausing = 0
                 last_total_count = total_count
 
-
-        if ditherCount >= GlobalVars.cmd_list["DE"]:
+        
+        if dither_count == GlobalVars.cmd_list["DE"] or dither_count > GlobalVars.cmd_list["DE"]:
+            
             #setMessage("STATUS: dither start \r\n")
             setMessage(buildMessage("STATUS", "dither start"))
             SharpCap.LiveStacking.Parameters.Paused = True
@@ -258,7 +262,7 @@ def threaded_livestack():
 
     GlobalVars.CaptureThreadRunning = 0
     #setMessage("STATUS: end live capture thread \r\n")
-    setMessage(buildMessage("STATUS" "end live capture thread"))
+    setMessage(buildMessage("STATUS" , "end live capture thread"))
 
 #==========================================================================
 #=========================================================================+
@@ -405,7 +409,7 @@ def phdDither():
 		
     setMessage(buildMessage("DEBUG", "dither cmd loop running"))
     while GlobalVars.forceTerminate == 0:
-        print "before sleep"
+        
         sleep(1)
         text = "doDither value = : " + str(GlobalVars.doPhdDither)
         setMessage(buildMessage("DEBUG",text))
