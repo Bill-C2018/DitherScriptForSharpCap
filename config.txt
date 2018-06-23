@@ -2,5 +2,5 @@ FC: 15
 DE: 7
 GS: 1
 DD: 3
-LS: 1
-SD: 1
+LS: 0
+SD: 0

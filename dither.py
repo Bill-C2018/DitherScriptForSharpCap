@@ -74,10 +74,10 @@ GlobalVars.cmd_list["GS"] = 1
 GlobalVars.cmd_list["DD"] = 2
 #set to one if you are doing live stacking
 #0 otherwise
-GlobalVars.cmd_list["LS"] = 1
+GlobalVars.cmd_list["LS"] = 0
 #wait one frame after we recieve settledone if set to one else
 #start stacking as soon as we get the settle done
-GlobalVars.cmd_list["SD"] = 1
+GlobalVars.cmd_list["SD"] = 0
 #============================================================================
 #============================================================================
 #=========== from here downward is optional - if left as is it will use the
@@ -112,27 +112,16 @@ port = 4400
 ditherport = 4300
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #==========================================================================
 #=========================================================================+
 # stub out the calls to sharp cap
 # pylint: disable=undefined-variable
+
+def buildMessage(type,msg):
+	message = {}
+	message["type"] = type + ": "
+	message["msg"] = msg
+	return message
 
 
 def sharpCapInitCapture(use_sharp_cap):
@@ -181,17 +170,20 @@ def sharpCapToggleCameraPaused(use_sharp_cap, value):
 def sharpCapPrepareAndRun(use_sharp_cap):
     if use_sharp_cap:
         if not SharpCap.SelectedCamera.Capturing:
-            setMessage("STATUS: preparing capture \r\n")
+            #setMessage("STATUS: preparing capture \r\n")
+            setMessage(buildMessage("STATUS", "preparing capture"))
             SharpCap.SelectedCamera.PrepareToCapture()
             SharpCap.SelectedCamera.RunCapture()
         else:
             if GlobalVars.needs_unpausing == 1:
-                setMessage("STATUS: resuming \r\n")
+                #setMessage("STATUS: resuming \r\n")
+                setMessage(buildMessage("STATUS", "resuming"))
                 SharpCap.SelectedCamera.Paused = False
                 GlobalVars.needs_unpausing = 0
     else:
         if GlobalVars.needs_unpausing == 1:
-            setMessage("STATUS: resuming \r\n")
+            #setMessage("STATUS: resuming \r\n")
+            setMessage(buildMessage("STATUS", "resuming"))
             GlobalVars.needs_unpausing = 0
 
 
@@ -216,14 +208,14 @@ def threaded_livestack():
 
     last_total_count = SharpCap.SelectedCamera.CapturedFrameCount
 
-    setMessage("STATUS: live capture runninig \r\n")
+    #setMessage("STATUS: live capture runninig \r\n")
+    setMessage(buildMessage("STATUS", "live capture running"))
     while GlobalVars.forceTerminate == 0:
+        setMessage(buildMessage("DEBUG", "in live capture loop"))
         sleep(2)
 
-
-        #setMessage("STATUS: live capture loop1 \r\n")
         total_count = SharpCap.SelectedCamera.CapturedFrameCount
-        #setMessage("STATUS: live capture loop2 \r\n")
+        
 
         if GlobalVars.isDithering == 1 and GlobalVars.needs_unpausing == 1:
             waitoneframe = total_count
@@ -232,7 +224,9 @@ def threaded_livestack():
             if GlobalVars.needs_unpausing == 0:
                 dither_count = total_count - last_total_count
 
-        setMessage("STATUS: dither count " + str(ditherCount) + " \r\n")
+        #setMessage("STATUS: dither count " + str(ditherCount) + " \r\n")
+        setMessage(buildMessage("DEBUG", "dither count " + str(ditherCount)))
+		
         if GlobalVars.isDithering == 0 and GlobalVars.needs_unpausing == 1:
             if GlobalVars.cmd_list["SD"] == 1:
                 if total_count > waitoneframe:
@@ -246,7 +240,8 @@ def threaded_livestack():
 
 
         if ditherCount >= GlobalVars.cmd_list["DE"]:
-            setMessage("STATUS: dither start \r\n")
+            #setMessage("STATUS: dither start \r\n")
+            setMessage(buildMessage("STATUS", "dither start"))
             SharpCap.LiveStacking.Parameters.Paused = True
             last_total_count = total_count
 
@@ -255,17 +250,19 @@ def threaded_livestack():
             if GlobalVars.cmd_list["DD"] == 0:
                 os.system(GlobalVars.cmd_list["PA"])
             else:
-                setMessage("STATUS: Sending dither command \r\n")
+                #setMessage("STATUS: Sending dither command \r\n")
+                setMessage(buildMessage("DEBUG", "sending dither command"))
                 GlobalVars.doPhdDither = 1
 
             GlobalVars.needs_unpausing = 1
 
     GlobalVars.CaptureThreadRunning = 0
-    setMessage("STATUS: end live capture thread \r\n")
+    #setMessage("STATUS: end live capture thread \r\n")
+    setMessage(buildMessage("STATUS" "end live capture thread"))
 
 #==========================================================================
 #=========================================================================+
-# this function is the thread that deals with SharpCap
+# this function is the thread that deals with SharpCap standard capture
 def threaded_send():
 
     lastTotalCount = 0
@@ -276,7 +273,8 @@ def threaded_send():
     totalCount = 0
     ditherCount = 0
     GlobalVars.terminate = 0
-
+    setMessage(buildMessage("STATUS", "Sharp cap standard thread"))
+	
     while GlobalVars.terminate == 0:
         sleep(2)
         if GlobalVars.cmd_list["GS"] == 1:
@@ -284,11 +282,14 @@ def threaded_send():
         else:
             doCapture = 1
         if GlobalVars.isDithering == 0 and doCapture == 0:
-            setMessage("STATUS: Waiting \r\n")
+            #setMessage("STATUS: Waiting \r\n")
+            setMessage(buildMessage("STATUS", "Waiting"))
         if GlobalVars.isDithering == 1:
-            setMessage("STATUS: Dithering \r\n")
+            #setMessage("STATUS: Dithering \r\n")
+            setMessage(buildMessage("STATUS","Dithering"))
         if GlobalVars.isDithering == 0 and doCapture == 1:
-            setMessage("STATUS: Capturing \r\n")
+            #setMessage("STATUS: Capturing \r\n")
+            setMessage(buildMessage("STATUS", "Capturing"))
 
         if GlobalVars.isDithering == 0:
             if doCapture == 1:
@@ -298,13 +299,15 @@ def threaded_send():
                 else:
                     totalCount = 0
 
-                setMessage("STATUS: Total Count = " + str(totalCount))
+                #setMessage("STATUS: Total Count = " + str(totalCount))
+                setMessage(buildMessage("INFO", "Total Count = " + str(totalCount)))
                 ditherCount = totalCount - lastTotalCount
                 sharpCapPrepareAndRun(USE_SHARP_CAP)
 
 
                 if ditherCount >= GlobalVars.cmd_list["DE"]:
-                    setMessage("STATUS: dither start \r\n")
+                    #setMessage("STATUS: dither start \r\n")
+                    setMessage(buildMessage("STATUS", "dither start"))
                     lastTotalCount = totalCount
                     sharpCapToggleCameraPaused(USE_SHARP_CAP, True)
 
@@ -313,26 +316,30 @@ def threaded_send():
                     if GlobalVars.cmd_list["DD"] == 0:
                         os.system(GlobalVars.cmd_list["PA"])
                     else:
-                        setMessage("STATUS: Sending dither command \r\n")
+                        #setMessage("STATUS: Sending dither command \r\n")
+                        setMessage(buildMessage("DEBUG", "Sending dither command"))
                         GlobalVars.doPhdDither = 1
 
                     GlobalVars.needs_unpausing = 1
 
         if totalCount >= GlobalVars.cmd_list["FC"]:
-            setMessage("STATUS: exit capture thread on count \r\n")
+            #setMessage("STATUS: exit capture thread on count \r\n")
+            setMessage(buildMessage("STATUS","Exit capture thread on count"))
             GlobalVars.CaptureThreadRunning = 0
             sharpCapStopCapture(USE_SHARP_CAP)
             GlobalVars.forceTerminate = 1
             GlobalVars.terminate = 1
             exit()
         if GlobalVars.forceTerminate == 1:
-            setMessage("STATUS: exit capture thread \r\n")
+            #setMessage("STATUS: exit capture thread \r\n")
+            setMessage(buildMessage("STATUS", "Exit capture thread on forceterminate"))
             #SharpCap.SelectedCamera.Paused = True
             GlobalVars.CaptureThreadRunning = 0
             sharpCapStopCapture(USE_SHARP_CAP)
             exit()
         if GlobalVars.terminate == 1:
-            setMessage("STATUS: exit capture thread \r\n")
+            #setMessage("STATUS: exit capture thread \r\n")
+            setMessage(buildMessage("STATUS", "Exit capture thread on terminate"))
             sharpCapStopCapture(USE_SHARP_CAP)
             GlobalVars.CaptureThreadRunning = 0
             exit()
@@ -345,11 +352,7 @@ def threaded_send():
 def threaded_listen():
 
 
-
-
-
     GlobalVars.PHDThreadRunning = 1
-
 
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -362,7 +365,9 @@ def threaded_listen():
     for l in s.makefile():
         m = json.loads(l)
         if 'Event' in m and m['Event'] != 'LoopingExposures':
-            setMessage("PHD: " + m['Event'] + "\r\n")
+            #setMessage("PHD: " + m['Event'] + "\r\n")
+            eventtext = m['Event']
+            setMessage(buildMessage("PHD", eventtext))
             if m['Event'] == 'StartGuiding':
                 GlobalVars.is_guiding = 1
             if m['Event'] == 'GuideStep':
@@ -389,21 +394,24 @@ def threaded_listen():
 # this is the function / thread that sends the dither command to phd
 def phdDither():
 
-
-
-
-
+    GlobalVars.terminate = 0
     phd_cmd_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         phd_cmd_socket.connect((host, ditherport))
     except:
-        setMessage('STATUS: Unable to connect to phd server')
+        #setMessage('STATUS: Unable to connect to phd server')
+        setMessage(buildMessage("ERROR",  "Unable to connect to phd server"))
         exit()
-
-    while GlobalVars.terminate == 0:
+		
+    setMessage(buildMessage("DEBUG", "dither cmd loop running"))
+    while GlobalVars.forceTerminate == 0:
+        print "before sleep"
         sleep(1)
+        text = "doDither value = : " + str(GlobalVars.doPhdDither)
+        setMessage(buildMessage("DEBUG",text))
         if GlobalVars.doPhdDither == 1:
-            setMessage("STATUS: Dither command rcvd \r\n")
+            #setMessage("STATUS: Dither command rcvd \r\n")
+            setMessage(buildMessage("STATUS", "Dither command rcvd"))
             #found two "larger" dither commands
             ditherAmount = 5
             ditherCmd = GlobalVars.cmd_list["DD"]
@@ -414,6 +422,7 @@ def phdDither():
             msg = chr(ditherAmount)
             phd_cmd_socket.send(msg.encode())
             GlobalVars.doPhdDither = 0
+    setMessage(buildMessage("DEBUG", "exit dither cmd loop"))
 #============================================================================
 #============================================================================
 
@@ -449,36 +458,30 @@ def doparseLine(line):
 
     res = line.split(":")
     if len(res) != 2:
-        setMessage("STATUS: invalid config line")
+        #setMessage("STATUS: invalid config line")
+        setMessage(buildMessage("WARNING", "invalid config line"))
         return
     if res[0] in GlobalVars.valid_commands:
         if res[0] == "PA":
             GlobalVars.cmd_list[res[0]] = res[1]
         else:
             GlobalVars.cmd_list[res[0]] = int(res[1])
-        setMessage("STATUS: Config Line: " + line)
+        #setMessage("STATUS: Config Line: " + line)
+        setMessage(buildMessage("INFO","Config line " + line))
 
 #/////////////////////////////////////
 def runLoop():
-
-
-
-
-
-
-
-
-
-    global s
 
     while 1:
 
         sleep(4)
         #setMessage("DEBUG: run loop \r\n")
+        setMessage(buildMessage("STATUS", "Run loop"))
         if GlobalVars.startCaptureClicked == 1:
 
             if GlobalVars.CaptureThreadRunning == 0 and GlobalVars.PHDThreadRunning == 0:
-                setMessage("STATUS: in run loop \r\n")
+                #setMessage("STATUS: in run loop \r\n")
+                setMessage(buildMessage("DEBUG", "in run loop"))
                 GlobalVars.is_guiding = 0
                 GlobalVars.terminate = 0
                 GlobalVars.forceTerminate = 0
@@ -498,13 +501,14 @@ def runLoop():
 
         if GlobalVars.stopCaptureClicked == 1 or GlobalVars.terminate == 1:
             GlobalVars.forceTerminate = 1
-            setMessage("STATUS: Run Complete \r\n")
+            #setMessage("STATUS: Run Complete \r\n")
+            setMessage(buildMessage("STATUS","Run complete"))
             GlobalVars.stopCaptureClicked = 0
 #            t1.join()
 #            t2.join()
 #            t3.join()
 
-    setMessage("STATUS: run loop exit \r\n")
+    setMessage(buildMessage("STATUS"," run loop exit "))
 
 def statusLoop():
 
@@ -534,9 +538,11 @@ def statusLoop():
                 s2.sendall(message.encode())
             else:
                 for m in message:
-                    if m != lastmessage:
-                        print m
-                        lastmessage = m
+                    msg = m["msg"]
+                    level = m["type"]
+                    if msg != lastmessage:
+                        print msg
+                        lastmessage = msg
                     if m == "endstatusloop":
                         endStatusLoop = 1
                     message = []
@@ -548,16 +554,12 @@ def statusLoop():
 
 def startCapture():
 
-
-
-
-
-
-
     GlobalVars.forceTerminate = 0
     GlobalVars.terminate = 0
     GlobalVars.stopCaptureClicked = 0
-    setMessage("EVENT: Start clicked \r\n")
+    #setMessage("EVENT: Start clicked \r\n")
+    print "start clicked"
+    setMessage(buildMessage("INFO", "Start clicked"))
     filepath = GlobalVars.cmd_list["CF"]
     if os.path.isfile(filepath):
         with open(filepath) as fp:
