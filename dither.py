@@ -24,6 +24,7 @@ import json
 import threading
 import os
 from time import sleep
+import urllib2
 
 class GlobalVariables:
     is_guiding = 0
@@ -105,9 +106,9 @@ GlobalVars.cmd_list["OF"] = "FITS files (*.fits)"
 # globals .. doesnt make me happy but it works :)
 
 #for Testing without sharpcap use 0
-USE_SHARP_CAP = 1
+USE_SHARP_CAP = 0
 
-host = '127.0.0.1'
+host = '192.168.1.12'
 port = 4400
 ditherport = 4300
 
@@ -118,10 +119,10 @@ ditherport = 4300
 # pylint: disable=undefined-variable
 
 def buildMessage(type,msg):
-	message = {}
-	message["type"] = type + ": "
-	message["msg"] = msg
-	return message
+    message = {}
+    message["type"] = type + ": "
+    message["msg"] = msg
+    return message
 
 
 def sharpCapInitCapture(use_sharp_cap):
@@ -155,7 +156,7 @@ def sharpCapGetImageCount(use_sharp_cap):
         return SharpCap.SelectedCamera.CapturedFrameCount
     else:
         GlobalVars.localImageCounter = GlobalVars.localImageCounter + 1
-        if GlobalVars.localImageCounter > 10:
+        if GlobalVars.localImageCounter > 5:
             GlobalVars.fakedImages = GlobalVars.fakedImages + 1
             GlobalVars.localImageCounter = 0
     return GlobalVars.fakedImages
@@ -216,7 +217,7 @@ def threaded_livestack():
         sleep(2)
 
         total_count = SharpCap.SelectedCamera.CapturedFrameCount
-        
+
 
         if GlobalVars.isDithering == 1 and GlobalVars.needs_unpausing == 1:
             waitoneframe = total_count
@@ -225,12 +226,12 @@ def threaded_livestack():
             if GlobalVars.needs_unpausing == 0:
                 dither_count = total_count - last_total_count
 
-        
+
         setMessage(buildMessage("DEBUG", "dither count " + str(dither_count)))
-        
-		
+
+
         if GlobalVars.isDithering == 0 and GlobalVars.needs_unpausing == 1:
-            
+
             if GlobalVars.cmd_list["SD"] == 1:
                 if total_count > waitoneframe:
                     SharpCap.LiveStacking.Parameters.Paused = False
@@ -241,9 +242,9 @@ def threaded_livestack():
                 GlobalVars.needs_unpausing = 0
                 last_total_count = total_count
 
-        
+
         if dither_count == GlobalVars.cmd_list["DE"] or dither_count > GlobalVars.cmd_list["DE"]:
-            
+
             #setMessage("STATUS: dither start \r\n")
             setMessage(buildMessage("STATUS", "dither start"))
             SharpCap.LiveStacking.Parameters.Paused = True
@@ -278,7 +279,7 @@ def threaded_send():
     ditherCount = 0
     GlobalVars.terminate = 0
     setMessage(buildMessage("STATUS", "Sharp cap standard thread"))
-	
+
     while GlobalVars.terminate == 0:
         sleep(2)
         if GlobalVars.cmd_list["GS"] == 1:
@@ -395,6 +396,33 @@ def threaded_listen():
             exit()
 #=============================================================================
 #=============================================================================
+def phdDither3():
+    print "phddither2"
+    false = 0
+    req = urllib.request.Request('http://192.168.1.12:4400')
+    req.add_header('Content-Type', 'application/json; charset=utf-8')
+    data = {"method": "dither", "params": [3.0, false, {"pixels": 1.0, "time": 6, "timeout": 12}], "id": 2}
+    jsondata = json.dumps(data)
+    print jsondata
+    jsondataasbytes = jsondata.encode('utf-8')
+    req.add_header('Content-Length', len(jsondataasbytes))
+    response = urllib.request.urlopen(req, jsondataasbytes)
+    print "this is the response " + response
+
+
+def phdDither2():
+    message = '{"method": "dither", "params": [10, false, {"pixels": 1.5, "time": 8, "timeout": 40}], "id": 42}\r\n'
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((host, port))
+    except:
+        print 'Unable to connect to phd server'
+        exit()
+    s.send(message)
+
+
+#=============================================================================
+#=============================================================================
 # this is the function / thread that sends the dither command to phd
 def phdDither():
 
@@ -406,10 +434,10 @@ def phdDither():
         #setMessage('STATUS: Unable to connect to phd server')
         setMessage(buildMessage("ERROR",  "Unable to connect to phd server"))
         exit()
-		
+
     setMessage(buildMessage("DEBUG", "dither cmd loop running"))
     while GlobalVars.forceTerminate == 0:
-        
+
         sleep(1)
         text = "doDither value = : " + str(GlobalVars.doPhdDither)
         setMessage(buildMessage("DEBUG",text))
@@ -424,7 +452,9 @@ def phdDither():
             else:
                 ditherAmount = ditherCmd + 8
             msg = chr(ditherAmount)
-            phd_cmd_socket.send(msg.encode())
+            #phd_cmd_socket.send(msg.encode())
+            phdDither2()
+
             GlobalVars.doPhdDither = 0
     setMessage(buildMessage("DEBUG", "exit dither cmd loop"))
 #============================================================================
@@ -539,7 +569,7 @@ def statusLoop():
 
         if len(message) > 0:
             if isConnectedToStatusMonitor == 1:
-                s2.sendall(message.encode())
+                s2.sendall(message)
             else:
                 for m in message:
                     msg = m["msg"]
