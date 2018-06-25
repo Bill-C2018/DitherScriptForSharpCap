@@ -6,6 +6,6 @@ LS: 0
 SD: 0
 DP: 5
 RA: 0
-SR: 1.5
+SR: 2
 SD: 5
 SM: 40
