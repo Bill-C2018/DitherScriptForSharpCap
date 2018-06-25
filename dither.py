@@ -40,10 +40,11 @@ class GlobalVariables:
     message = []
     doPhdDither = 0
     needs_unpausing = 0
+    ditherstring = ""
 
 
     cmd_list = {}
-    valid_commands = ["FC", "DE", "PA", "GS", "EX", "GA", "DD", "LS", "SD"]
+    valid_commands = ["FC", "DE", "PA", "GS", "EX", "GA", "DD", "LS", "SD", "DP", "RA", "SR", "SD", "SM"]
 
 
 
@@ -100,17 +101,43 @@ GlobalVars.cmd_list["GA"] = 50
 GlobalVars.cmd_list["CS"] = "RAW16"
 #output format
 GlobalVars.cmd_list["OF"] = "FITS files (*.fits)"
+#
+#defualts for new dither call
+#
+GlobalVars.cmd_list["DP"] = 10  #dither up to this many pixels
+GlobalVars.cmd_list["RA"] = 1   #dither in ra only 1 = true 0 = False
+GlobalVars.cmd_list["SR"] = 1.5 #how close to locked star to be SettleDone
+GlobalVars.cmd_list["SD"] = 5   #how long must you be that close
+GlobalVars.cmd_list["SM"] = 40  #time out value
+#'{"method": "dither", "params": [10, false, {"pixels": 1.5, "time": 8, "timeout": 40}], "id": 42}\r\n'
+
+def buildDitherString():
+    message = '{"method": "dither", "params": ['
+    message = message + str(GlobalVars.cmd_list["DP"])
+    if(GlobalVars.cmd_list["RA"] == 1):
+        message = message + ', true, { "pixels": '
+    else:
+        message = message + ', false,  { "pixels": '
+
+    message = message + str(GlobalVars.cmd_list["SR"])
+    message = message + ', "time": '
+    message = message + str(GlobalVars.cmd_list["SD"])
+    message = message + ', "timeout": '
+    message = message + str(GlobalVars.cmd_list["SM"])
+    message = message + '}], "id":' + str(42) + '}\r\n'
+    GlobalVars.ditherstring = message
+    setMessage(buildMessage("DEBUG", GlobalVars.ditherstring))
 
 #===========================================================================
 #==========================================================================
 # globals .. doesnt make me happy but it works :)
 
 #for Testing without sharpcap use 0
-USE_SHARP_CAP = 0
+USE_SHARP_CAP = 1
 
-host = '192.168.1.12'
+host = '127.0.0.1'
 port = 4400
-ditherport = 4300
+
 
 
 #==========================================================================
@@ -396,22 +423,10 @@ def threaded_listen():
             exit()
 #=============================================================================
 #=============================================================================
-def phdDither3():
-    print "phddither2"
-    false = 0
-    req = urllib.request.Request('http://192.168.1.12:4400')
-    req.add_header('Content-Type', 'application/json; charset=utf-8')
-    data = {"method": "dither", "params": [3.0, false, {"pixels": 1.0, "time": 6, "timeout": 12}], "id": 2}
-    jsondata = json.dumps(data)
-    print jsondata
-    jsondataasbytes = jsondata.encode('utf-8')
-    req.add_header('Content-Length', len(jsondataasbytes))
-    response = urllib.request.urlopen(req, jsondataasbytes)
-    print "this is the response " + response
-
-
+#use the new interface to dither
 def phdDither2():
-    message = '{"method": "dither", "params": [10, false, {"pixels": 1.5, "time": 8, "timeout": 40}], "id": 42}\r\n'
+
+    message = GlobalVars.ditherstring
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.connect((host, port))
@@ -427,34 +442,14 @@ def phdDither2():
 def phdDither():
 
     GlobalVars.terminate = 0
-    phd_cmd_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        phd_cmd_socket.connect((host, ditherport))
-    except:
-        #setMessage('STATUS: Unable to connect to phd server')
-        setMessage(buildMessage("ERROR",  "Unable to connect to phd server"))
-        exit()
-
     setMessage(buildMessage("DEBUG", "dither cmd loop running"))
     while GlobalVars.forceTerminate == 0:
-
         sleep(1)
         text = "doDither value = : " + str(GlobalVars.doPhdDither)
         setMessage(buildMessage("DEBUG",text))
         if GlobalVars.doPhdDither == 1:
-            #setMessage("STATUS: Dither command rcvd \r\n")
             setMessage(buildMessage("STATUS", "Dither command rcvd"))
-            #found two "larger" dither commands
-            ditherAmount = 5
-            ditherCmd = GlobalVars.cmd_list["DD"]
-            if ditherCmd < 4:
-                ditherAmount = ditherCmd + 2
-            else:
-                ditherAmount = ditherCmd + 8
-            msg = chr(ditherAmount)
-            #phd_cmd_socket.send(msg.encode())
             phdDither2()
-
             GlobalVars.doPhdDither = 0
     setMessage(buildMessage("DEBUG", "exit dither cmd loop"))
 #============================================================================
@@ -599,6 +594,7 @@ def startCapture():
         with open(filepath) as fp:
             for line in fp:
                 doparseLine(line)
+    buildDitherString()
     GlobalVars.startCaptureClicked = 1
 
 

@@ -4,3 +4,8 @@ GS: 1
 DD: 3
 LS: 0
 SD: 0
+DP: 5
+RA: 0
+SR: 1.5
+SD: 5
+SM: 40
