@@ -224,73 +224,6 @@ def sharpCapStopCapture(use_sharp_cap):
 #===========================================================================
 #===========================================================================
 #this is the sharp cap thread if live stacking
-def threaded_livestack():
-
-    GlobalVars.CaptureThreadRunning = 1
-
-    last_total_count = 0
-    total_count = 0
-    dither_count = 0
-    GlobalVars.terminate = 0
-    waitoneframe = 0
-
-    last_total_count = SharpCap.SelectedCamera.CapturedFrameCount
-
-    #setMessage("STATUS: live capture runninig \r\n")
-    setMessage(buildMessage("STATUS", "live capture running"))
-    while GlobalVars.forceTerminate == 0:
-        print "in live capture loop"
-        setMessage(buildMessage("DEBUG", "in live capture loop"))
-        sleep(2)
-
-        total_count = SharpCap.SelectedCamera.CapturedFrameCount
-
-
-        if GlobalVars.isDithering == 1 and GlobalVars.needs_unpausing == 1:
-            waitoneframe = total_count
-            last_total_count = total_count
-        else:
-            if GlobalVars.needs_unpausing == 0:
-                dither_count = total_count - last_total_count
-
-
-        setMessage(buildMessage("DEBUG", "dither count " + str(dither_count)))
-
-
-        if GlobalVars.isDithering == 0 and GlobalVars.needs_unpausing == 1:
-
-            if GlobalVars.cmd_list["SD"] == 1:
-                if total_count > waitoneframe:
-                    SharpCap.LiveStacking.Parameters.Paused = False
-                    GlobalVars.needs_unpausing = 0
-                    last_total_count = total_count
-            else:
-                SharpCap.LiveStacking.Parameters.Paused = False
-                GlobalVars.needs_unpausing = 0
-                last_total_count = total_count
-
-
-        if dither_count == GlobalVars.cmd_list["DE"] or dither_count > GlobalVars.cmd_list["DE"]:
-
-            #setMessage("STATUS: dither start \r\n")
-            setMessage(buildMessage("STATUS", "dither start"))
-            SharpCap.LiveStacking.Parameters.Paused = True
-            last_total_count = total_count
-
-            dither_count = 0
-            GlobalVars.isDithering = 1
-            if GlobalVars.cmd_list["DD"] == 0:
-                os.system(GlobalVars.cmd_list["PA"])
-            else:
-                #setMessage("STATUS: Sending dither command \r\n")
-                setMessage(buildMessage("DEBUG", "sending dither command"))
-                GlobalVars.doPhdDither = 1
-
-            GlobalVars.needs_unpausing = 1
-
-    GlobalVars.CaptureThreadRunning = 0
-    #setMessage("STATUS: end live capture thread \r\n")
-    setMessage(buildMessage("STATUS" , "end live capture thread"))
 
 #==========================================================================
 #=========================================================================+
@@ -518,10 +451,7 @@ def runLoop():
                 t2 = 0
 
                 t1 = threading.Thread(target=threaded_listen, args=[])
-                if GlobalVars.cmd_list["LS"] == 0:
-                    t2 = threading.Thread(target=threaded_send, args=[])
-                else:
-                    t2 = threading.Thread(target=threaded_livestack, args=[])
+                t2 = threading.Thread(target=threaded_send, args=[])
                 t3 = threading.Thread(target=phdDither, args=[])
                 t1.start()
                 t2.start()
