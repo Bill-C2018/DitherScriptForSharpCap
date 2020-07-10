@@ -1,10 +1,25 @@
+#<head></head>
+#<body>
+#<h2><center>This software is copyright 2018<br>
+#Bill Cunning / CSoft Software
+#</center>
+#</h2>
+#<h3>
+#This software is licensed under the Creative Commons License and may be
+#modified and shared as long as the terms of the license are followed
+#</h3>
+#<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+#</body>
+#
+
 import socket
 import sys
 import json
 import threading
 import os
-from time import sleep
+import time 
 import urllib2
+from time import sleep
 
 class GlobalVariables:
 	message = []
@@ -12,7 +27,8 @@ class GlobalVariables:
 	ditherEvery = 3
 	ditherstring = ""
 	is_guiding = False
-	is_dithering = False;
+	is_dithering = False
+	waitForNextFrame = False
 	
 class DitherVariables:
 	RAOnly = False
@@ -86,8 +102,20 @@ def threaded_listen():
 				exit()
 
 def waitForGuiding():
+	exposure = sharpCapGetExposureTime()
+	message = "Exposure " + str(exposure)
+	setMessage(buildMessage("STATUS", message))
+	timenow = time.time()
 	while GlobalVars.is_guiding == False:
 		sleep(1)
+	
+
+	if GlobalVars.waitForNextFrame:
+		texposure = exposure/1000
+		elapsed = time.time() - timenow
+		while elapsed < (texposure + 10):
+			sleep(1)
+			elapsed = time.time() - timenow
 		
 
 def phdDither():
@@ -124,6 +152,9 @@ def sharpCapGetImageCount():
 	
 def sharpCapIsCapturing():
 	return SharpCap.SelectedCamera.Capturing
+	
+def sharpCapGetExposureTime():
+	return SharpCap.SelectedCamera.Controls.Exposure.Value
 	
 #//////////////////////////////
 
