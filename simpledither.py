@@ -9,7 +9,7 @@ import urllib2
 class GlobalVariables:
 	message = []
 	doRun = True
-	ditherEvery = 5
+	ditherEvery = 3
 	ditherstring = ""
 	is_guiding = False
 	is_dithering = False;
@@ -142,17 +142,31 @@ def doDither():
 #//////////////////////////////
 def statusLoop():
 
+	statusListener = False
+
+	message = GlobalVars.ditherstring
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	try:
+		s.connect((host, 4501))
+		statusListener = True
+	except:
+		print 'Unable to connect to status server'
+
+		
 	lastmessage = ""
 	while GlobalVars.doRun == True:
 		sleep(1)
 		message = readMessage()
 		if len(message) > 0 :
-			for m in message:
-				msg = m["msg"]
-				level = m["type"]				
-				if 1:
-					print msg
-					lastmessage = msg
+			if statusListener == False:
+				for m in message:
+					msg = m["msg"]
+					level = m["type"]				
+					if 1:
+						print msg
+						lastmessage = msg
+			else:
+				s.send(message)
 
 #///////////////////////////
 def mainRunLoop():
@@ -181,7 +195,16 @@ def mainRunLoop():
 def stopScript():
 	GlobalVars.doRun = False
 	
-
+def startScript():
+	GlobalVars.doRun = True
+	tRun = threading.Thread(target=mainRunLoop, args=[])
+	tStatus = threading.Thread(target=statusLoop, args=[])
+	tPhd = threading.Thread(target=threaded_listen, args=[])
+	tRun.start()
+	tStatus.start()
+	tPhd.start()	
+	
+	
 #///////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////
 #main
@@ -191,11 +214,5 @@ GlobalVars = GlobalVariables
 ditherVars = DitherVariables
 lock = threading.Lock()
 
-
+SharpCap.AddCustomButton("Start", None, "StartDitheredRun", startScript)
 SharpCap.AddCustomButton("Stop", None, "StopDitheredRun", stopScript)
-tRun = threading.Thread(target=mainRunLoop, args=[])
-tStatus = threading.Thread(target=statusLoop, args=[])
-tPhd = threading.Thread(target=threaded_listen, args=[])
-tRun.start()
-tStatus.start()
-tPhd.start()
