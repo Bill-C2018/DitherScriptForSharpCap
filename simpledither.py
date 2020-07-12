@@ -172,16 +172,10 @@ def doDither():
 #//////////////////////////////
 def statusLoop():
 
+#no status server for now
 	statusListener = False
 
 	message = GlobalVars.ditherstring
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	try:
-		s.connect((host, 4501))
-		statusListener = True
-	except:
-		print 'Unable to connect to status server'
-
 		
 	lastmessage = ""
 	while GlobalVars.doRun == True:
