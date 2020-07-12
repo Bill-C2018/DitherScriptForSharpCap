@@ -28,7 +28,7 @@ class GlobalVariables:
 	ditherstring = ""
 	is_guiding = False
 	is_dithering = False
-	waitForNextFrame = False
+	waitForNextFrame = True
 	
 class DitherVariables:
 	RAOnly = False
@@ -109,7 +109,6 @@ def waitForGuiding():
 	while GlobalVars.is_guiding == False:
 		sleep(1)
 	
-
 	if GlobalVars.waitForNextFrame:
 		texposure = exposure/1000
 		elapsed = time.time() - timenow
@@ -117,7 +116,7 @@ def waitForGuiding():
 			sleep(1)
 			elapsed = time.time() - timenow
 		
-
+	
 def phdDither():
 	message = GlobalVars.ditherstring
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
