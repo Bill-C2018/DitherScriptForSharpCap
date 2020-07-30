@@ -24,7 +24,7 @@ from time import sleep
 class GlobalVariables:
 	message = []
 	doRun = True
-	ditherEvery = 3
+	ditherEvery = 10
 	ditherstring = ""
 	is_guiding = False
 	is_dithering = False
@@ -110,7 +110,7 @@ def waitForGuiding():
 		sleep(1)
 	
 	if GlobalVars.waitForNextFrame:
-		texposure = exposure/1000
+		texposure = exposure
 		elapsed = time.time() - timenow
 		while elapsed < (texposure + 10):
 			sleep(1)
