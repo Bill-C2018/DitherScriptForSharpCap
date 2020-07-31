@@ -21,6 +21,7 @@ import time
 import urllib2
 from time import sleep
 
+
 class GlobalVariables:
 	message = []
 	doRun = True
@@ -39,6 +40,8 @@ class DitherVariables:
 
 host = '127.0.0.1'
 port = 4400
+
+cmd_port = 5322
 
 #///////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////
@@ -193,6 +196,54 @@ def statusLoop():
 				s.send(message)
 
 #///////////////////////////
+#///////////////////////////////////////////////////////////////
+#server code for getting and setting values
+def buildResponse(con, status,value):
+	x = {
+		"status" : status,
+		"value"  : value
+	}
+			
+	message = json.dumps(x)
+	con.sendall(bytes(message,'ascii')) 
+
+def cmdListener():
+
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	server_address = (host, cmd_port)
+	
+	sock.bind(server_address)
+	sock.listen(1)
+	
+	#This should always run
+	#while GlobalVars.doRun == True:
+	while True:
+	
+		connection, client_address = sock.accept()
+		try:
+			#while GlobalVars.doRun == True:
+			while True:	
+				data = connection.recv(100)
+				sdata = str(data,'ascii')
+				obj = json.loads(sdata)
+				setMessage(buildMessage("CMD", sdata))
+				if obj["op"] == "get":
+					if obj["cmd"] == "ditherevery":
+						buildResponse(connection,"ok",GlobalVariables.ditherEvery)
+						break
+										
+				if obj["op"] == "put":
+					if obj["cmd"] == "ditherevery":
+						if int(obj["value"]) > 0:
+							GlobalVariables.ditherEvery = int(obj["value"])
+							buildResponse(connection,"ok",GlobalVariables.ditherEvery)
+							break 
+
+		finally:
+			# Clean up the connection
+			connection.close()	
+							
+#///////////////////////////////////////
 def mainRunLoop():
 
 	localFrameCount = 0
@@ -228,7 +279,8 @@ def startScript():
 	tStatus.start()
 	tPhd.start()	
 	
-	
+
+
 #///////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////
 #main
@@ -240,3 +292,7 @@ lock = threading.Lock()
 
 SharpCap.AddCustomButton("Start", None, "StartDitheredRun", startScript)
 SharpCap.AddCustomButton("Stop", None, "StopDitheredRun", stopScript)
+
+command_thread = threading.Thread(target=cmdListener, args=[])
+command_thread.start()
+
