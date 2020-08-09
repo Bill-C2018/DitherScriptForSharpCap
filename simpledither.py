@@ -198,14 +198,10 @@ def statusLoop():
 #///////////////////////////
 #///////////////////////////////////////////////////////////////
 #server code for getting and setting values
-def buildResponse(con, status,value):
-	x = {
-		"status" : status,
-		"value"  : value
-	}
+def buildResponse(status,value):
 			
 	message = "status : " + status + " value : " + value
-	con.sendall(bytes(message,'ascii')) 
+	return message 
 
 def cmdListener():
 
@@ -231,36 +227,31 @@ def cmdListener():
 				CMD = (obj["cmd"])
 				OP = (obj["op"])
 				VALUE = (obj["value"])
-				print("here")
 				if OP == "set" :
 					print("SET")
 					if CMD == "waitfornextframe" :
 						if VALUE == "false" :
 							GlobalVars.waitForNextFrame = False
-							message = "status : " + "ok" + " value : " + str(GlobalVars.waitForNextFrame)
-							print(message)
+							message = buildResponse("SET : OK",str(GlobalVars.waitForNextFrame))
 							connection.sendall(bytes(message,'ascii'))
 							connection.close()
 							break	
 						else:
 							GlobalVars.waitForNextFrame = True
-							message = "status : " + "ok" + " value : " + str(GlobalVars.waitForNextFrame)
-							print(message)
+							message = buildResponse("SET : OK",str(GlobalVars.waitForNextFrame))
 							connection.sendall(bytes(message,'ascii'))
 							connection.close()
 							break	
 					elif CMD == "raonly":
 						if VALUE == "false" :
 							ditherVars.RAOnly = False
-							message = "status : " + "ok" + " value : " + str(ditherVars.RAOnly)
-							print(message)
+							message = buildResponse("SET : OK",str(ditherVars.RAOnly))
 							connection.sendall(bytes(message,'ascii'))
 							connection.close()
 							break	
 						else:
 							ditherVars.RAOnly = True
-							message = "status : " + "ok" + " value : " + str(ditherVars.RAOnly)
-							print(message)
+							message = buildResponse("SET : OK",str(ditherVars.RAOnly))
 							connection.sendall(bytes(message,'ascii'))
 							connection.close()
 							break	
@@ -268,14 +259,12 @@ def cmdListener():
 						number = int(VALUE)
 						if number > 0 :
 							GlobalVars.ditherEvery = number
-							message = "status : " + "ok" + " value : " + str(GlobalVars.ditherEvery)
-							print(message)
+							message = buildResponse("SET : OK",str(GlobalVars.ditherEvery))
 							connection.sendall(bytes(message,'ascii'))
 							connection.close()
 							break
 						else:
-							message = "Value must be greater than 0"
-							print(message)
+							message = buildResponse("SET : FAIL","Value must be greater than 0")
 							connection.sendall(bytes(message,'ascii'))
 							connection.close()
 							break
@@ -285,20 +274,17 @@ def cmdListener():
 				elif OP == "get" :
 					print("GET")
 					if CMD == "waitfornextframe" :
-						message = "status : " + "OK" + " value : " + str(GlobalVars.waitForNextFrame)
-						print(message)
+						message = buildResponse("GET : OK",str(GlobalVars.waitForNextFrame))
 						connection.sendall(bytes(message,'ascii'))
 						connection.close()
 						break
 					elif CMD == "raonly" :
-						message = "status : " + "OK" + " value : " + str(ditherVars.RAOnly)
-						print(message)
+						message = buildResponse("GET : OK",str(ditherVars.RAOnly))
 						connection.sendall(bytes(message,'ascii'))
 						connection.close()
 						break						
 					elif CMD == "ditherevery" :
-							message = "status : " + "ok" + " value : " + str(GlobalVars.ditherEvery)
-							print(message)
+							message = buildResponse("GET : OK",str(GlobalVars.ditherEvery))
 							connection.sendall(bytes(message,'ascii'))
 							connection.close()
 							break					
