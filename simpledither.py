@@ -204,7 +204,7 @@ def buildResponse(con, status,value):
 		"value"  : value
 	}
 			
-	message = json.dumps(x)
+	message = "status : " + status + " value : " + value
 	con.sendall(bytes(message,'ascii')) 
 
 def cmdListener():
@@ -219,29 +219,99 @@ def cmdListener():
 	#while GlobalVars.doRun == True:
 	while True:
 	
+		print("waiting for connection")
 		connection, client_address = sock.accept()
+		print("connected")
 		try:
 			#while GlobalVars.doRun == True:
 			while True:	
 				data = connection.recv(100)
 				sdata = str(data,'ascii')
 				obj = json.loads(sdata)
-				setMessage(buildMessage("CMD", sdata))
-				if obj["op"] == "get":
-					if obj["cmd"] == "ditherevery":
-						buildResponse(connection,"ok",GlobalVariables.ditherEvery)
+				CMD = (obj["cmd"])
+				OP = (obj["op"])
+				VALUE = (obj["value"])
+				print("here")
+				if OP == "set" :
+					print("SET")
+					if CMD == "waitfornextframe" :
+						if VALUE == "false" :
+							GlobalVars.waitForNextFrame = False
+							message = "status : " + "ok" + " value : " + str(GlobalVars.waitForNextFrame)
+							print(message)
+							connection.sendall(bytes(message,'ascii'))
+							connection.close()
+							break	
+						else:
+							GlobalVars.waitForNextFrame = True
+							message = "status : " + "ok" + " value : " + str(GlobalVars.waitForNextFrame)
+							print(message)
+							connection.sendall(bytes(message,'ascii'))
+							connection.close()
+							break	
+					elif CMD == "raonly":
+						if VALUE == "false" :
+							ditherVars.RAOnly = False
+							message = "status : " + "ok" + " value : " + str(ditherVars.RAOnly)
+							print(message)
+							connection.sendall(bytes(message,'ascii'))
+							connection.close()
+							break	
+						else:
+							ditherVars.RAOnly = True
+							message = "status : " + "ok" + " value : " + str(ditherVars.RAOnly)
+							print(message)
+							connection.sendall(bytes(message,'ascii'))
+							connection.close()
+							break	
+					elif CMD == "ditherevery" :
+						number = int(VALUE)
+						if number > 0 :
+							GlobalVars.ditherEvery = number
+							message = "status : " + "ok" + " value : " + str(GlobalVars.ditherEvery)
+							print(message)
+							connection.sendall(bytes(message,'ascii'))
+							connection.close()
+							break
+						else:
+							message = "Value must be greater than 0"
+							print(message)
+							connection.sendall(bytes(message,'ascii'))
+							connection.close()
+							break
+							
+							
+							
+				elif OP == "get" :
+					print("GET")
+					if CMD == "waitfornextframe" :
+						message = "status : " + "OK" + " value : " + str(GlobalVars.waitForNextFrame)
+						print(message)
+						connection.sendall(bytes(message,'ascii'))
+						connection.close()
 						break
-										
-				if obj["op"] == "put":
-					if obj["cmd"] == "ditherevery":
-						if int(obj["value"]) > 0:
-							GlobalVariables.ditherEvery = int(obj["value"])
-							buildResponse(connection,"ok",GlobalVariables.ditherEvery)
-							break 
+					elif CMD == "raonly" :
+						message = "status : " + "OK" + " value : " + str(ditherVars.RAOnly)
+						print(message)
+						connection.sendall(bytes(message,'ascii'))
+						connection.close()
+						break						
+					elif CMD == "ditherevery" :
+							message = "status : " + "ok" + " value : " + str(GlobalVars.ditherEvery)
+							print(message)
+							connection.sendall(bytes(message,'ascii'))
+							connection.close()
+							break					
 
-		finally:
+
+		except:
 			# Clean up the connection
+			print("in exception")
 			connection.close()	
+			sock.close()
+			sys.exit()
+			
+	sock.close()
 							
 #///////////////////////////////////////
 def mainRunLoop():
