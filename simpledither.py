@@ -209,6 +209,13 @@ def buildResponse(status,value):
 def endofLine():
 
 	return "\r\n"
+	
+def sendResponse(connection,msg,closeConnection):
+
+	connection.sendall(bytes(msg,'ascii'))
+	connection.sendall(bytes(endofLine(),'ascii'))
+	if closeConnection:
+		connection.close()
 
 def cmdListener():
 
@@ -240,46 +247,34 @@ def cmdListener():
 						if VALUE == "false" :
 							GlobalVars.waitForNextFrame = False
 							message = buildResponse("SET : OK",str(GlobalVars.waitForNextFrame))
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
+							sendResponse(connection,message,True)
 							break	
 						else:
 							GlobalVars.waitForNextFrame = True
 							message = buildResponse("SET : OK",str(GlobalVars.waitForNextFrame))
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
+							sendResponse(connection,message,True)
 							break	
 					elif CMD == "raonly":
 						if VALUE == "false" :
 							ditherVars.RAOnly = False
 							message = buildResponse("SET : OK",str(ditherVars.RAOnly))
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
+							sendResponse(connection,message,True)
 							break	
 						else:
 							ditherVars.RAOnly = True
 							message = buildResponse("SET : OK",str(ditherVars.RAOnly))
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
+							sendResponse(connection,message,True)
 							break	
 					elif CMD == "ditherevery" :
 						number = int(VALUE)
 						if number > 0 :
 							GlobalVars.ditherEvery = number
 							message = buildResponse("SET : OK",str(GlobalVars.ditherEvery))
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
+							sendResponse(connection,message,True)
 							break
 						else:
 							message = buildResponse("SET : FAIL","Value must be greater than 0")
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
+							sendResponse(connection,message,True)
 							break
 					elif CMD == "settletarget" :
 						number = int(VALUE)
@@ -287,15 +282,23 @@ def cmdListener():
 						if number > 0 :
 							ditherVars.SettleTarget = number
 							message = buildResponse("SET : OK",str(ditherVars.SettleTarget))
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
+							sendResponse(connection,message,True)
 							break
 						else:
 							message = buildResponse("SET : FAIL","Value must be greater than 0")
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
+							sendResponse(connection,message,True)
+							break
+					elif CMD == "settleDelay" :
+						number = int(VALUE)
+						print(str(number))
+						if number > 0 :
+							ditherVars.SettleTarget = number
+							message = buildResponse("SET : OK",str(ditherVars.SettleDelay))
+							sendResponse(connection,message,True)
+							break
+						else:
+							message = buildResponse("SET : FAIL","Value must be greater than 0")
+							sendResponse(connection,message,True)
 							break
 							
 							
@@ -304,31 +307,25 @@ def cmdListener():
 					print("GET")
 					if CMD == "waitfornextframe" :
 						message = buildResponse("GET : OK",str(GlobalVars.waitForNextFrame))
-						connection.sendall(bytes(message,'ascii'))
-						connection.sendall(bytes(endofLine(),'ascii'))
-						connection.close()
+						sendResponse(connection,message,True)
 						break
 					elif CMD == "raonly" :
 						message = buildResponse("GET : OK",str(ditherVars.RAOnly))
-						connection.sendall(bytes(message,'ascii'))
-						connection.sendall(bytes(endofLine(),'ascii'))
-						connection.close()
+						sendResponse(connection,message,True)
 						break						
 					elif CMD == "ditherevery" :
 						message = buildResponse("GET : OK",str(GlobalVars.ditherEvery))
-						connection.sendall(bytes(message,'ascii'))
-						connection.sendall(bytes(endofLine(),'ascii'))
-						connection.close()
+						sendResponse(connection,message,True)
 						break					
 					elif CMD == "settletarget" :
-						print("here1")
 						message = buildResponse("GET : OK",str(ditherVars.SettleTarget))
-						connection.sendall(bytes(message,'ascii'))
-						print("here2")
-						connection.sendall(bytes(endofLine(),'ascii'))
-						print("here3")
-						connection.close()
+						sendResponse(connection,message,True)
 						break
+					elif CMD == "settledelay" :
+						message = buildResponse("GET : OK",str(ditherVars.SettleDelay))
+						sendResponse(connection,message,True)
+						break
+
 
 		except:
 			# Clean up the connection
