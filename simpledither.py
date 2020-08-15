@@ -299,11 +299,11 @@ def cmdListener():
 						connection.close()
 						break						
 					elif CMD == "ditherevery" :
-							message = buildResponse("GET : OK",str(GlobalVars.ditherEvery))
-							connection.sendall(bytes(message,'ascii'))
-							connection.sendall(bytes(endofLine(),'ascii'))
-							connection.close()
-							break					
+						message = buildResponse("GET : OK",str(GlobalVars.ditherEvery))
+						connection.sendall(bytes(message,'ascii'))
+						connection.sendall(bytes(endofLine(),'ascii'))
+						connection.close()
+						break					
 
 
 		except:

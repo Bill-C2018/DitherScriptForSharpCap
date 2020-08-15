@@ -4,7 +4,7 @@ import json
 
 
 endOfLine = "\r\n"
-valid_cmds = ["ditherevery","waitfornextframe","raonly"]
+valid_cmds = ["ditherevery","waitfornextframe","raonly", "settletarget"]
 valid_ops = ["get", "set"]
 
 def isValidCmd(cmd):
