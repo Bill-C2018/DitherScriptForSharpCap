@@ -111,6 +111,9 @@ def waitForGuiding():
 	timenow = time.time()
 	while GlobalVars.is_guiding == False:
 		sleep(1)
+		count = count + 1
+		if count > ditherVars.SettleMaximum:
+			GlobalVars.is_guiding = True
 	
 	if GlobalVars.waitForNextFrame:
 		texposure = exposure
