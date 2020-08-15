@@ -3,7 +3,7 @@ import sys
 import json
 
 
-
+endOfLine = "\r\n"
 valid_cmds = ["ditherevery","waitfornextframe","raonly"]
 valid_ops = ["get", "set"]
 
@@ -61,9 +61,13 @@ try:
     amount_received = 0
     
 #    while amount_received < 5:
-    data = sock.recv(100)
-    amount_received += len(data)
-    print( data)
+    eolr = False
+    while eolr == False:
+        data = sock.recv(100)
+        sdata = str(data,'ascii')
+        print( sdata)
+        if sdata == endOfLine:
+            eolr = True
 #break
 
 finally:

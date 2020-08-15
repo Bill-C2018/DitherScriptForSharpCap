@@ -203,8 +203,12 @@ def statusLoop():
 #server code for getting and setting values
 def buildResponse(status,value):
 			
-	message = "status : " + status + " value : " + value
+	message = "status : " + status + " value : " + value 
 	return message 
+	
+def endofLine():
+
+	return "\r\n"
 
 def cmdListener():
 
@@ -237,12 +241,14 @@ def cmdListener():
 							GlobalVars.waitForNextFrame = False
 							message = buildResponse("SET : OK",str(GlobalVars.waitForNextFrame))
 							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
 							connection.close()
 							break	
 						else:
 							GlobalVars.waitForNextFrame = True
 							message = buildResponse("SET : OK",str(GlobalVars.waitForNextFrame))
 							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
 							connection.close()
 							break	
 					elif CMD == "raonly":
@@ -250,12 +256,14 @@ def cmdListener():
 							ditherVars.RAOnly = False
 							message = buildResponse("SET : OK",str(ditherVars.RAOnly))
 							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
 							connection.close()
 							break	
 						else:
 							ditherVars.RAOnly = True
 							message = buildResponse("SET : OK",str(ditherVars.RAOnly))
 							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
 							connection.close()
 							break	
 					elif CMD == "ditherevery" :
@@ -264,11 +272,13 @@ def cmdListener():
 							GlobalVars.ditherEvery = number
 							message = buildResponse("SET : OK",str(GlobalVars.ditherEvery))
 							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
 							connection.close()
 							break
 						else:
 							message = buildResponse("SET : FAIL","Value must be greater than 0")
 							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
 							connection.close()
 							break
 							
@@ -279,16 +289,19 @@ def cmdListener():
 					if CMD == "waitfornextframe" :
 						message = buildResponse("GET : OK",str(GlobalVars.waitForNextFrame))
 						connection.sendall(bytes(message,'ascii'))
+						connection.sendall(bytes(endofLine(),'ascii'))
 						connection.close()
 						break
 					elif CMD == "raonly" :
 						message = buildResponse("GET : OK",str(ditherVars.RAOnly))
 						connection.sendall(bytes(message,'ascii'))
+						connection.sendall(bytes(endofLine(),'ascii'))
 						connection.close()
 						break						
 					elif CMD == "ditherevery" :
 							message = buildResponse("GET : OK",str(GlobalVars.ditherEvery))
 							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
 							connection.close()
 							break					
 
