@@ -278,7 +278,6 @@ def cmdListener():
 							break
 					elif CMD == "settletarget" :
 						number = int(VALUE)
-						print(str(number))
 						if number > 0 :
 							ditherVars.SettleTarget = number
 							message = buildResponse("SET : OK",str(ditherVars.SettleTarget))
@@ -288,12 +287,33 @@ def cmdListener():
 							message = buildResponse("SET : FAIL","Value must be greater than 0")
 							sendResponse(connection,message,True)
 							break
-					elif CMD == "settleDelay" :
+					elif CMD == "settledelay" :
 						number = int(VALUE)
-						print(str(number))
 						if number > 0 :
 							ditherVars.SettleTarget = number
 							message = buildResponse("SET : OK",str(ditherVars.SettleDelay))
+							sendResponse(connection,message,True)
+							break
+						else:
+							message = buildResponse("SET : FAIL","Value must be greater than 0")
+							sendResponse(connection,message,True)
+							break
+					elif CMD == "settlemax" :
+						number = int(VALUE)
+						if number > 0 :
+							ditherVars.SettleMaximum = number
+							message = buildResponse("SET : OK",str(ditherVars.SettleMaximum))
+							sendResponse(connection,message,True)
+							break
+						else:
+							message = buildResponse("SET : FAIL","Value must be greater than 0")
+							sendResponse(connection,message,True)
+							break
+					elif CMD == "maxpixels" :
+						number = int(VALUE)
+						if number > 0 :
+							ditherVars.MaxPixels = number
+							message = buildResponse("SET : OK",str(ditherVars.MaxPixels))
 							sendResponse(connection,message,True)
 							break
 						else:
@@ -325,6 +345,19 @@ def cmdListener():
 						message = buildResponse("GET : OK",str(ditherVars.SettleDelay))
 						sendResponse(connection,message,True)
 						break
+					elif CMD == "settlemax" :
+						message = buildResponse("GET : OK",str(ditherVars.SettleMaximum))
+						sendResponse(connection,message,True)
+						break
+					elif CMD == "maxpixels" :
+						message = buildResponse("GET : OK",str(ditherVars.MaxPixels))
+						sendResponse(connection,message,True)
+						break	
+					elif CMD == "ditherstring" :
+						buildDitherString()
+						message = buildResponse("GET : OK",str(GlobalVars.ditherstring))
+						sendResponse(connection,message,True)
+						break						
 
 
 		except:

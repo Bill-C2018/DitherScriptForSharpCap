@@ -4,7 +4,7 @@ import json
 
 
 endOfLine = "\r\n"
-valid_cmds = ["ditherevery","waitfornextframe","raonly", "settletarget", "settledelay"]
+valid_cmds = ["ditherevery","waitfornextframe","raonly", "settletarget", "settledelay", "settlemax", "maxpixels", "ditherstring"]
 valid_ops = ["get", "set"]
 
 def isValidCmd(cmd):
@@ -63,7 +63,7 @@ try:
 #    while amount_received < 5:
     eolr = False
     while eolr == False:
-        data = sock.recv(100)
+        data = sock.recv(255)
         sdata = str(data,'ascii')
         print( sdata)
         if endOfLine in sdata:
