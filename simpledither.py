@@ -281,6 +281,22 @@ def cmdListener():
 							connection.sendall(bytes(endofLine(),'ascii'))
 							connection.close()
 							break
+					elif CMD == "settletarget" :
+						number = int(VALUE)
+						print(str(number))
+						if number > 0 :
+							ditherVars.SettleTarget = number
+							message = buildResponse("SET : OK",str(ditherVars.SettleTarget))
+							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
+							connection.close()
+							break
+						else:
+							message = buildResponse("SET : FAIL","Value must be greater than 0")
+							connection.sendall(bytes(message,'ascii'))
+							connection.sendall(bytes(endofLine(),'ascii'))
+							connection.close()
+							break
 							
 							
 							
@@ -304,11 +320,20 @@ def cmdListener():
 						connection.sendall(bytes(endofLine(),'ascii'))
 						connection.close()
 						break					
-
+					elif CMD == "settletarget" :
+						print("here1")
+						message = buildResponse("GET : OK",str(ditherVars.SettleTarget))
+						connection.sendall(bytes(message,'ascii'))
+						print("here2")
+						connection.sendall(bytes(endofLine(),'ascii'))
+						print("here3")
+						connection.close()
+						break
 
 		except:
 			# Clean up the connection
 			print("in exception")
+			connection.sendall(bytes(endofLine(),'ascii'))
 			connection.close()	
 			sock.close()
 			sys.exit()

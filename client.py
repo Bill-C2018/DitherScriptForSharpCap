@@ -66,8 +66,9 @@ try:
         data = sock.recv(100)
         sdata = str(data,'ascii')
         print( sdata)
-        if sdata == endOfLine:
+        if endOfLine in sdata:
             eolr = True
+
 #break
 
 finally:
