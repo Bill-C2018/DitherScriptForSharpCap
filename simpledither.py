@@ -29,7 +29,7 @@ class GlobalVariables:
 	ditherstring = ""
 	is_guiding = False
 	is_dithering = False
-	waitForNextFrame = True
+	waitForNextFrame = False
 	
 class DitherVariables:
 	RAOnly = False
@@ -109,11 +109,15 @@ def waitForGuiding():
 	message = "Exposure " + str(exposure)
 	setMessage(buildMessage("STATUS", message))
 	timenow = time.time()
+	count = 0
 	while GlobalVars.is_guiding == False:
 		sleep(1)
 		count = count + 1
-		if count > ditherVars.SettleMaximum:
+		setMessage(buildMessage("STATS", str(count)))
+		if count > int(ditherVars.SettleMaximum) :
+			setMessage(buildMessage("STATUS","setting is guiding to true"))
 			GlobalVars.is_guiding = True
+
 	
 	if GlobalVars.waitForNextFrame:
 		texposure = exposure
@@ -132,7 +136,8 @@ def phdDither():
 		print 'Unable to connect to phd server'
 		exit()
 		
-	s.send(message)
+	s.sendall(message)
+	s.close()
 
 def buildDitherString():
 	message = '{"method": "dither", "params": ['
