@@ -29,7 +29,9 @@ class GlobalVariables:
 	ditherstring = ""
 	is_guiding = False
 	is_dithering = False
+	dither_started = False
 	waitForNextFrame = False
+	listenSocketConnected = False
 	
 class DitherVariables:
 	RAOnly = False
@@ -78,12 +80,16 @@ def readMessage():
 #///////////////////////////
 def threaded_listen():
 
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	try:
-		s.connect((host, port))
-	except:
-		print 'Unable to connect to phd server'
-		exit()
+	if GlobalVars.listenSocketConnected == False:
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		try:
+			s.connect((host, port))
+		except:
+			print 'Unable to connect to phd server'
+			exit()
+			
+	GlobalVars.listenSocketConnected = True
+			
 
 	for l in s.makefile():
 		m = json.loads(l)
@@ -96,18 +102,29 @@ def threaded_listen():
 				GlobalVars.is_guiding = True
 			if m['Event'] == 'GuidingStopped':
 				GlobalVars.is_guiding = False
+			if m['Event'] == 'StarLost':
+				GlobalVars.is_guiding = False				
 			if m['Event'] == 'GuidingDithered':
 				GlobalVars.is_guiding = False
+			if m['Event'] == 'SettleBegin':
+				GlobalVars.dither_started = True
 			if m['Event'] == 'SettleDone':
 				GlobalVars.is_guiding = True
 			sleep(1)
-			if GlobalVars.doRun == False:
-				exit()
+
 
 def waitForGuiding():
 	exposure = sharpCapGetExposureTime()
 	message = "Exposure " + str(exposure)
 	setMessage(buildMessage("STATUS", message))
+	
+	while GlobalVars.dither_started == False:
+		sleep(1)
+
+# we have seen the settle begin event which set it to true
+# so we can set it back to false		
+	GlobalVars.dither_started = False
+	
 	timenow = time.time()
 	count = 0
 	while GlobalVars.is_guiding == False:
@@ -169,16 +186,17 @@ def sharpCapGetExposureTime():
 #//////////////////////////////
 
 def doDither():
-	SharpCap.SelectedCamera.Paused = True
-	setMessage(buildMessage("STATUS", "Dithering"))
-	setMessage(buildMessage("STATUS", GlobalVars.ditherstring ))
-	GlobalVars.is_dithering = True
-	GlobalVars.is_guiding = False
-	phdDither()
-	GlobalVars.is_guiding = False
-	waitForGuiding()
-	GlobalVars.is_dithering = False
-	SharpCap.SelectedCamera.Paused = False
+	if GlobalVars.is_guiding == True: 
+		SharpCap.SelectedCamera.Paused = True
+		setMessage(buildMessage("STATUS", "Dithering"))
+		setMessage(buildMessage("STATUS", GlobalVars.ditherstring ))
+		GlobalVars.is_dithering = True
+		GlobalVars.is_guiding = False
+		phdDither()
+		GlobalVars.is_guiding = False
+		waitForGuiding()
+		GlobalVars.is_dithering = False
+		SharpCap.SelectedCamera.Paused = False
 
 #//////////////////////////////
 def statusLoop():
@@ -383,6 +401,14 @@ def mainRunLoop():
 	buildDitherString()
 	while GlobalVars.doRun == True:
 		sleep(1)
+		if GlobalVars.is_guiding == True:
+			if SharpCap.SelectedCamera.Paused == False:
+				SharpCap.SelectedCamera.Paused = True
+		else:
+			if SharpCap.SelectedCamera.Paused == True:
+				SharpCap.SelectedCamera.Paused = False
+				
+				
 		if sharpCapIsCapturing():
 			setMessage(buildMessage("STATUS", "capturing"))
 			frameCount = sharpCapGetImageCount()
