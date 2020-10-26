@@ -129,28 +129,32 @@ def threaded_listen():
 
 
 def wait_for_guiding():
+    
     exposure = sharpCapGetExposureTime()
     message = "Exposure " + str(exposure)
     set_message(build_message("STATUS", message))
-    
+
+'''
+when we see a settle begin dither started is set to true
+'''    
     while GlobalVars.dither_started == False:
         sleep(1)
-
-# we have seen the settle begin event which set it to true
-# so we can set it back to false        
+'''
+once we see it we can clear it again
+'''
     GlobalVars.dither_started = False
-    
+
+'''
+now wait for is guiding to be set back to true (settle done received)
+'''    
     timenow = time.time()
     count = 0
     while GlobalVars.is_guiding == False:
         sleep(1)
-        count = count + 1
-        set_message(build_message("STATS", str(count)))
-        if count > int(ditherVars.SettleMaximum) :
-            set_message(build_message("STATUS","setting is guiding to true"))
-            GlobalVars.is_guiding = True
 
-    
+'''
+if we want to skip the next frame do so here
+'''    
     if GlobalVars.waitForNextFrame:
         texposure = exposure
         elapsed = time.time() - timenow
