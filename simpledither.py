@@ -1,4 +1,4 @@
-'''
+
 #<head></head>
 #<body>
 #<h2><center>This software is copyright 2018<br>
@@ -12,7 +12,7 @@
 #<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 #</body>
 #
-'''
+
 
 import socket
 import sys
@@ -23,6 +23,7 @@ import time
 import urllib2
 from time import sleep
 
+TIME_DELAY = 0.5
 '''
 PHD Server
 '''
@@ -125,7 +126,7 @@ def threaded_listen():
                 GlobalVars.dither_started = True
             if m['Event'] == 'SettleDone':
                 GlobalVars.is_guiding = True
-            sleep(1)
+            sleep(TIME_DELAY)
 
 
 def wait_for_guiding():
@@ -133,33 +134,24 @@ def wait_for_guiding():
     exposure = sharpCapGetExposureTime()
     message = "Exposure " + str(exposure)
     set_message(build_message("STATUS", message))
-
-'''
-when we see a settle begin dither started is set to true
-'''    
+  
     while GlobalVars.dither_started == False:
-        sleep(1)
-'''
-once we see it we can clear it again
-'''
+        sleep(TIME_DELAY)
+
     GlobalVars.dither_started = False
 
-'''
-now wait for is guiding to be set back to true (settle done received)
-'''    
+ 
     timenow = time.time()
     count = 0
     while GlobalVars.is_guiding == False:
-        sleep(1)
+        sleep(TIME_DELAY)
 
-'''
-if we want to skip the next frame do so here
-'''    
+  
     if GlobalVars.waitForNextFrame:
         texposure = exposure
         elapsed = time.time() - timenow
         while elapsed < (texposure + 10):
-            sleep(1)
+            sleep(TIME_DELAY)
             elapsed = time.time() - timenow
         
     
@@ -227,7 +219,7 @@ def status_loop():
         
     lastmessage = ""
     while GlobalVars.doRun == True:
-        sleep(1)
+        sleep(TIME_DELAY)
         message = read_message()
         if len(message) > 0 :
             if statusListener == False:
@@ -419,7 +411,7 @@ def main_run_loop():
     lastHardFrameCount = 0
     build_dither_string()
     while GlobalVars.doRun == True:
-        sleep(1)
+        sleep(TIME_DELAY)
         if GlobalVars.is_guiding == True:
             if SharpCap.SelectedCamera.Paused == True:
                 SharpCap.SelectedCamera.Paused = False

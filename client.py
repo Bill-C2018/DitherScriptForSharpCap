@@ -62,12 +62,13 @@ def validate_cmd_line(data):
         sys.exit()
     
     if sys.argv[1] == "get":
-        if not sys.argv[3]:
-            data = "0"
+        if(len(sys.argv) < 4):
+            data = 0
         else:
-            data = sys.argv[3]
+            data = syst.argv[3]
+            
     else:
-        if not sys.argv[3]:
+        if(len(sys.argv) < 4):
             print("Value is required for set operation")
             sys.exit()
 
