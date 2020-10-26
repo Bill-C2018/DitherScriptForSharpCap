@@ -24,31 +24,13 @@ import urllib2
 from time import sleep
 
 TIME_DELAY = 0.5
-'''
-PHD Server
-'''
+
 host = '127.0.0.1'
 port = 4400
 
-'''
-port that the cmd processor will listen on
-'''
+
 cmd_port = 5322
 
-'''
-global variables
-'''
-
-class GlobalVariables:
-    message = []
-    doRun = True
-    ditherEvery = 10
-    ditherstring = ""
-    is_guiding = False
-    is_dithering = False
-    dither_started = False
-    waitForNextFrame = False
-    listenSocketConnected = False
     
 class DitherVariables:
     RAOnly = False
@@ -56,9 +38,21 @@ class DitherVariables:
     SettleTarget = 2
     SettleDelay = 10
     SettleMaximum = 60
+    ditherEvery = 10
+    waitForNextFrame = False
 
+#///////////////////////////////////////////////////////////////////////
+# nothing below here needs to be edited
+#///////////////////////////////////////////////////////////////////////
 
-
+class GlobalVariables:
+    message = []
+    doRun = True
+    ditherstring = ""
+    is_guiding = False
+    is_dithering = False
+    dither_started = False
+    listenSocketConnected = False
 
 
 #///////////////////////////////////////////////////////////////////////
@@ -147,7 +141,7 @@ def wait_for_guiding():
         sleep(TIME_DELAY)
 
   
-    if GlobalVars.waitForNextFrame:
+    if ditherVars.waitForNextFrame:
         texposure = exposure
         elapsed = time.time() - timenow
         while elapsed < (texposure + 10):
@@ -279,13 +273,13 @@ def cmd_listener():
                     print("SET")
                     if CMD == "waitfornextframe" :
                         if VALUE == "false" :
-                            GlobalVars.waitForNextFrame = False
-                            message = build_response("SET : OK",str(GlobalVars.waitForNextFrame))
+                            ditherVars.waitForNextFrame = False
+                            message = build_response("SET : OK",str(ditherVars.waitForNextFrame))
                             send_response(connection,message,True)
                             break    
                         else:
-                            GlobalVars.waitForNextFrame = True
-                            message = build_response("SET : OK",str(GlobalVars.waitForNextFrame))
+                            ditherVars.waitForNextFrame = True
+                            message = build_response("SET : OK",str(ditherVars.waitForNextFrame))
                             send_response(connection,message,True)
                             break    
                     elif CMD == "raonly":
@@ -302,8 +296,8 @@ def cmd_listener():
                     elif CMD == "ditherevery" :
                         number = int(VALUE)
                         if number > 0 :
-                            GlobalVars.ditherEvery = number
-                            message = build_response("SET : OK",str(GlobalVars.ditherEvery))
+                            ditherVars.ditherEvery = number
+                            message = build_response("SET : OK",str(ditherVars.ditherEvery))
                             send_response(connection,message,True)
                             break
                         else:
@@ -360,7 +354,7 @@ def cmd_listener():
                 elif OP == "get" :
                     print("GET")
                     if CMD == "waitfornextframe" :
-                        message = build_response("GET : OK",str(GlobalVars.waitForNextFrame))
+                        message = build_response("GET : OK",str(ditherVars.waitForNextFrame))
                         send_response(connection,message,True)
                         break
                     elif CMD == "raonly" :
@@ -368,7 +362,7 @@ def cmd_listener():
                         send_response(connection,message,True)
                         break                        
                     elif CMD == "ditherevery" :
-                        message = build_response("GET : OK",str(GlobalVars.ditherEvery))
+                        message = build_response("GET : OK",str(ditherVars.ditherEvery))
                         send_response(connection,message,True)
                         break                    
                     elif CMD == "settletarget" :
@@ -428,7 +422,7 @@ def main_run_loop():
             if lastHardFrameCount != frameCount:
                 lastHardFrameCount = frameCount
                 localFrameCount = localFrameCount + 1
-                if localFrameCount >= GlobalVars.ditherEvery:
+                if localFrameCount >= ditherVars.ditherEvery:
                     do_dither()
                     localFrameCount = 0
         else:
