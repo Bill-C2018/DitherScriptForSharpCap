@@ -65,13 +65,16 @@ def validate_cmd_line(data):
         if(len(sys.argv) < 4):
             data = 0
         else:
-            data = syst.argv[3]
+            data = sys.argv[3]
             
     else:
         if(len(sys.argv) < 4):
             print("Value is required for set operation")
             sys.exit()
+        else:
+            data = sys.argv[3]
 
+    return data
 
 def connect_and_transmit(cmd_block):
     # Create a TCP/IP socket
@@ -109,7 +112,7 @@ Main functionality
 ===============================================================================
 '''
             
-validate_cmd_line(data)
+data = validate_cmd_line(data)
         
 cmd_block = {
     "op" : sys.argv[1],
