@@ -23,15 +23,21 @@ import time
 import urllib2
 from time import sleep
 
+#============================================================================
+# these settings may be changed
+#============================================================================
+
+#this setting is in seconds, and should be less than the exposure time you have
+#set in PHD
 TIME_DELAY = 0.5
 
+#These are the standard phd server settings assuming phd is running on the same
+#machine as sharp cap
 host = '127.0.0.1'
 port = 4400
 
-
-cmd_port = 5322
-
-    
+#These are the setting that control the actual phd dithering -- see readme for full
+#explanation    
 class DitherVariables:
     RAOnly = False
     MaxPixels = 10
@@ -54,6 +60,7 @@ class GlobalVariables:
     dither_started = False
     listenSocketConnected = False
 
+cmd_port = 5322
 
 #///////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////
